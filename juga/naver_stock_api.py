@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Type, TypedDict, TypeVar
+from typing import Dict, List, Optional, Tuple, Type, TypedDict, TypeVar
 
 import aiohttp
 from asyncache import cached
@@ -205,35 +205,38 @@ T = TypeVar("T", bound="NaverStockAPI")
 class NaverStockAPI:
     @classmethod
     async def from_query(cls: Type[T], query: str) -> T:
-        metadata = await cls.fetch_metadata(query)
+        metadata = (await cls.fetch_metadata(query))[0]
         return cls(metadata)
 
     @classmethod
     @cached(LRUCache(maxsize=20))
-    async def fetch_metadata(cls, query: str) -> NaverStockMetadata:
+    async def fetch_metadata(
+        cls, query: str
+    ) -> Tuple[NaverStockMetadata, ...]:
         url_tmpl = "https://ac.finance.naver.com/ac?q={query}&q_enc=euc-kr&t_koreng=1&st=111&r_lt=111"  # noqa: E501
+        json_dict = None
         async with aiohttp.ClientSession() as session:
             async with session.get(url_tmpl.format(query=query)) as resp:
-                try:
-                    json_dict = await resp.json(content_type=None)
-                    first_item = json_dict["items"][0][0]
-                except IndexError:
-                    raise InvalidStockQuery(json_dict)
-                (
+                json_dict = await resp.json(content_type=None)
+
+        items: List[Tuple[str, ...]] = []
+        for group in json_dict["items"]:
+            for group_item in group:  # type: List[List[str]]
+                items.append(tuple(i[0] for i in group_item))
+
+        results: List[NaverStockMetadata] = []
+        for item in items:
+            symbol_code, display_name, market, url, reuters_code = item
+            results.append(
+                NaverStockMetadata(
                     symbol_code,
                     display_name,
                     market,
-                    url,
+                    f"https://m.stock.naver.com{url}",
                     reuters_code,
-                ) = first_item
-            # NOTE: 모든 값이 list로 감싸져있다
-        return NaverStockMetadata(
-            symbol_code[0],
-            display_name[0],
-            market[0],
-            f"https://m.stock.naver.com{url[0]}",
-            reuters_code[0],
-        )
+                )
+            )
+        return tuple(results)
 
     def __init__(self, metadata: NaverStockMetadata):
         self.metadata = metadata
