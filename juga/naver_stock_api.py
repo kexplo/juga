@@ -79,7 +79,7 @@ class NaverStockAPIParser(metaclass=ABCMeta):
         stock_data = await self._fetch_stock_data_impl(session)
         stock_data.url = self.metadata.url
         # workaround for broken korea stock market link
-        stock_data.url = stock_data.url.replace('main.nhn', 'index.nhn')
+        stock_data.url = stock_data.url.replace("main.nhn", "index.nhn")
         return stock_data
 
 
