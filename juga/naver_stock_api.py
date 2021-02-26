@@ -28,6 +28,18 @@ class NaverStockMetadata:
 
 
 @dataclass
+class NaverStockGraphURLs:
+    candle_day: str  # 일봉
+    candle_week: str  # 주봉
+    candle_month: str  # 월봉
+    day: str  # 1일
+    area_month_three: str  # 3개월
+    area_year: str  # 1년
+    area_year_three: str  # 3년
+    area_year_ten: str  # 10년
+
+
+@dataclass
 class NaverStockData:
     name: str
     name_eng: Optional[str]
@@ -38,8 +50,7 @@ class NaverStockData:
     compare_price: str
     compare_ratio: str
     total_infos: Dict[str, Optional[str]]  # TODO: ETF랑 Stock이랑 별도로 정의하면 좋겠다
-    day_graph_url: str
-    candle_graph_url: str
+    graph_urls: NaverStockGraphURLs
     url: str = field(init=False)
 
     def __post_init__(self):
@@ -114,6 +125,17 @@ class NaverStockAPIGlobalStockParser(NaverStockAPIParser):
             #   compareToPreviousPrice[code(2,5), text(상승,하락), name]]
         image_charts = response["imageCharts"]
 
+        graph_urls = NaverStockGraphURLs(
+            image_charts.get("candleDay", ""),
+            image_charts.get("candleWeek", ""),
+            image_charts.get("candleMonth", ""),
+            image_charts.get("day", ""),
+            image_charts.get("areaMonthThree", ""),
+            image_charts.get("areaYear", ""),
+            image_charts.get("areaYearThree", ""),
+            image_charts.get("areaYearTen", ""),
+        )
+
         return NaverStockData(
             response["stockName"],
             response["stockNameEng"],
@@ -124,8 +146,7 @@ class NaverStockAPIGlobalStockParser(NaverStockAPIParser):
             response["compareToPreviousClosePrice"],
             response["fluctuationsRatio"],
             total_infos,
-            image_charts["day"],
-            image_charts["candleMonth"],
+            graph_urls,
         )
 
 
@@ -175,6 +196,17 @@ class NaverStockAPIKoreaStockParser(NaverStockAPIParser):
             img_type: chart
             for img_type, chart in zip(image_chart_types, charts)
         }
+
+        graph_urls = NaverStockGraphURLs(
+            image_charts.get("일봉", ""),
+            image_charts.get("주봉", ""),
+            image_charts.get("월봉", ""),
+            image_charts.get("1일", ""),
+            image_charts.get("3개월", ""),
+            image_charts.get("1년", ""),
+            image_charts.get("3년", ""),
+            image_charts.get("10년", ""),
+        )
         return NaverStockData(
             name,
             None,
@@ -185,8 +217,7 @@ class NaverStockAPIKoreaStockParser(NaverStockAPIParser):
             compare_price,
             compare_ratio,
             total_infos,
-            image_charts["1일"],
-            image_charts["일봉"],
+            graph_urls,
         )
 
 
