@@ -74,7 +74,7 @@ class NaverStockAPIResponse(TypedDict):
     imageCharts: Dict[str, str]  # noqa: N815
 
 
-class NaverStockAPIParser(metaclass=ABCMeta):
+class NaverStockScraperBase(metaclass=ABCMeta):
     def __init__(self, stock_metadata: NaverStockMetadata):
         self.metadata = stock_metadata
 
@@ -94,7 +94,7 @@ class NaverStockAPIParser(metaclass=ABCMeta):
         return stock_data
 
 
-class NaverStockAPIGlobalStockParser(NaverStockAPIParser):
+class NaverStockGlobalStockScraper(NaverStockScraperBase):
     def _get_url_prefix(self):
         if self.metadata.is_etf:
             return "https://api.stock.naver.com/etf/"
@@ -150,7 +150,7 @@ class NaverStockAPIGlobalStockParser(NaverStockAPIParser):
         )
 
 
-class NaverStockAPIKoreaStockParser(NaverStockAPIParser):
+class NaverStockKoreaStockScraper(NaverStockScraperBase):
     async def _fetch_stock_data_impl(
         self, session: aiohttp.ClientSession
     ) -> NaverStockData:
@@ -221,13 +221,13 @@ class NaverStockAPIKoreaStockParser(NaverStockAPIParser):
         )
 
 
-class NaverStockAPIParserFactory:
+class NaverStockScraperFactory:
     @classmethod
     def from_metadata(cls, stock_metadata: NaverStockMetadata):
         if stock_metadata.is_global:
-            return NaverStockAPIGlobalStockParser(stock_metadata)
+            return NaverStockGlobalStockScraper(stock_metadata)
         # kospi, kosdaq
-        return NaverStockAPIKoreaStockParser(stock_metadata)
+        return NaverStockKoreaStockScraper(stock_metadata)
 
 
 T = TypeVar("T", bound="NaverStockAPI")
@@ -271,7 +271,7 @@ class NaverStockAPI:
 
     def __init__(self, metadata: NaverStockMetadata):
         self.metadata = metadata
-        self.parser = NaverStockAPIParserFactory.from_metadata(metadata)
+        self.parser = NaverStockScraperFactory.from_metadata(metadata)
 
     async def fetch_stock_data(self) -> NaverStockData:
         async with aiohttp.ClientSession() as session:
