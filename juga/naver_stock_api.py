@@ -1,51 +1,17 @@
-from abc import ABCMeta, abstractmethod
-from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple, Type, TypedDict, TypeVar
 
 import aiohttp
 from asyncache import cached
-from bs4 import BeautifulSoup
 from cachetools import LRUCache
 
+from juga.korea_stock_scraper import NaverStockKoreaStockScraper
 from juga.metadata_scraper import NaverStockMetadata, NaverStockMetadataScraper
+from juga.stock_scraper_base import (NaverStockChartURLs, NaverStockData,
+                                     NaverStockScraperBase)
 
 
 class InvalidStockQuery(Exception):
     pass
-
-
-@dataclass
-class NaverStockGraphURLs:
-    candle_day: str  # 일봉
-    candle_week: str  # 주봉
-    candle_month: str  # 월봉
-    day: str  # 1일
-    area_month_three: str  # 3개월
-    area_year: str  # 1년
-    area_year_three: str  # 3년
-    area_year_ten: str  # 10년
-
-
-@dataclass
-class NaverStockData:
-    name: str
-    name_eng: Optional[str]
-    symbol_code: str
-    close_price: str
-    market_value: Optional[str]
-    stock_exchange_name: str
-    compare_price: str
-    compare_ratio: str
-    total_infos: Dict[str, Optional[str]]  # TODO: ETF랑 Stock이랑 별도로 정의하면 좋겠다
-    graph_urls: NaverStockGraphURLs
-    url: str = field(init=False)
-
-    def __post_init__(self):
-        if self.compare_price[0] != "-":
-            self.compare_price = "🔺" + self.compare_price
-        if self.compare_ratio[0] != "-":
-            self.compare_ratio = "🔺" + self.compare_ratio
-        self.compare_ratio += "%"
 
 
 class NaverStockAPIResponse(TypedDict):
@@ -59,26 +25,6 @@ class NaverStockAPIResponse(TypedDict):
     fluctuationsRatio: str  # noqa: N815
     imageChartTypes: List[str]  # noqa: N815
     imageCharts: Dict[str, str]  # noqa: N815
-
-
-class NaverStockScraperBase(metaclass=ABCMeta):
-    def __init__(self, stock_metadata: NaverStockMetadata):
-        self.metadata = stock_metadata
-
-    @abstractmethod
-    async def _fetch_stock_data_impl(
-        self, session: aiohttp.ClientSession
-    ) -> NaverStockData:
-        pass
-
-    async def fetch_stock_data(
-        self, session: aiohttp.ClientSession
-    ) -> NaverStockData:
-        stock_data = await self._fetch_stock_data_impl(session)
-        stock_data.url = self.metadata.url
-        # workaround for broken korea stock market link
-        stock_data.url = stock_data.url.replace("main.nhn", "index.nhn")
-        return stock_data
 
 
 class NaverStockGlobalStockScraper(NaverStockScraperBase):
@@ -112,15 +58,17 @@ class NaverStockGlobalStockScraper(NaverStockScraperBase):
             #   compareToPreviousPrice[code(2,5), text(상승,하락), name]]
         image_charts = response["imageCharts"]
 
-        graph_urls = NaverStockGraphURLs(
-            image_charts.get("candleDay", ""),
+        chart_urls = NaverStockChartURLs(
             image_charts.get("candleWeek", ""),
             image_charts.get("candleMonth", ""),
             image_charts.get("day", ""),
+            image_charts.get("day_up", ""),
+            image_charts.get("day_up_tablet", ""),
             image_charts.get("areaMonthThree", ""),
             image_charts.get("areaYear", ""),
             image_charts.get("areaYearThree", ""),
             image_charts.get("areaYearTen", ""),
+            image_charts.get("transparent", ""),
         )
 
         return NaverStockData(
@@ -133,75 +81,8 @@ class NaverStockGlobalStockScraper(NaverStockScraperBase):
             response["compareToPreviousClosePrice"],
             response["fluctuationsRatio"],
             total_infos,
-            graph_urls,
-        )
-
-
-class NaverStockKoreaStockScraper(NaverStockScraperBase):
-    async def _fetch_stock_data_impl(
-        self, session: aiohttp.ClientSession
-    ) -> NaverStockData:
-        code = self.metadata.symbol_code
-        async with session.get(
-            "https://m.stock.naver.com/api/item/getOverallHeaderItem.nhn"
-            f"?code={code}"
-        ) as resp:
-            header_json = (await resp.json())["result"]
-
-        async with session.get(
-            "https://m.stock.naver.com/api/html/item/getOverallInfo.nhn"
-            f"?code={code}"
-        ) as resp:
-            html = await resp.text()
-
-        name = header_json["nm"]
-        time = header_json["time"]
-        symbol_code = header_json["cd"]
-        close_price = f'{header_json["nv"]:,}'
-        compare_price = f'{header_json["cv"]:,}'
-        compare_ratio = f'{header_json["cr"]:,}'
-        stock_exchange_name = self.metadata.stock_exchange_name
-
-        soup = BeautifulSoup(html, "html.parser")
-        total_info_lis = soup.select("ul.total_list > li")
-        total_infos = {
-            li.find("div").text.strip(): li.find("span").text.strip()
-            for li in total_info_lis
-        }
-
-        image_chart_types = [
-            li.find("span").text.strip()
-            for li in soup.select("ul.lnb_lst > li")
-        ]
-        # 클라이언트에서 이미지 캐시되는 것을 막기 위해
-        # 유효하지 않지만 URL 뒤에 '?time' 인자를 덧붙인다
-        charts = [
-            img.attrs["data-src"] + f"?{time}"
-            for img in soup.select("div.flick-ct * > img")
-        ]
-        image_charts = dict(zip(image_chart_types, charts))
-
-        graph_urls = NaverStockGraphURLs(
-            image_charts.get("일봉", ""),
-            image_charts.get("주봉", ""),
-            image_charts.get("월봉", ""),
-            image_charts.get("1일", ""),
-            image_charts.get("3개월", ""),
-            image_charts.get("1년", ""),
-            image_charts.get("3년", ""),
-            image_charts.get("10년", ""),
-        )
-        return NaverStockData(
-            name,
-            None,
-            symbol_code,
-            close_price,
-            total_infos.get("시총"),
-            stock_exchange_name,
-            compare_price,
-            compare_ratio,
-            total_infos,
-            graph_urls,
+            chart_urls,
+            "",
         )
 
 
