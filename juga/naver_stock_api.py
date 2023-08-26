@@ -7,24 +7,11 @@ from asyncache import cached
 from bs4 import BeautifulSoup
 from cachetools import LRUCache
 
+from juga.metadata_scraper import NaverStockMetadata, NaverStockMetadataScraper
+
 
 class InvalidStockQuery(Exception):
     pass
-
-
-@dataclass
-class NaverStockMetadata:
-    symbol_code: str
-    display_name: str
-    stock_exchange_name: str
-    url: str
-    reuters_code: str
-    is_etf: bool = field(init=False)
-    is_global: bool = field(init=False)
-
-    def __post_init__(self):
-        self.is_etf = "etf" in self.url
-        self.is_global = self.stock_exchange_name not in ["코스피", "코스닥"]
 
 
 @dataclass
@@ -241,30 +228,8 @@ class NaverStockAPI:
     async def fetch_metadata(
         cls, query: str
     ) -> Tuple[NaverStockMetadata, ...]:
-        url_tmpl = "https://ac.finance.naver.com/ac?q={query}&q_enc=euc-kr&t_koreng=1&st=111&r_lt=111"  # noqa: E501
-        json_dict = None
         async with aiohttp.ClientSession() as session:
-            async with session.get(url_tmpl.format(query=query)) as resp:
-                json_dict = await resp.json(content_type=None)
-
-        items: List[Tuple[str, ...]] = []
-        for group in json_dict["items"]:
-            for group_item in group:  # type: List[List[str]]
-                items.append(tuple(i[0] for i in group_item))
-
-        results: List[NaverStockMetadata] = []
-        for item in items:
-            symbol_code, display_name, market, url, reuters_code = item
-            results.append(
-                NaverStockMetadata(
-                    symbol_code,
-                    display_name,
-                    market,
-                    f"https://m.stock.naver.com{url}",
-                    reuters_code,
-                )
-            )
-        return tuple(results)
+            return await NaverStockMetadataScraper.fetch_metadata(session=session, query=query)
 
     def __init__(self, metadata: NaverStockMetadata):
         self.metadata = metadata
