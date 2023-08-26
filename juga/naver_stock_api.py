@@ -192,10 +192,7 @@ class NaverStockKoreaStockScraper(NaverStockScraperBase):
             img.attrs["data-src"] + f"?{time}"
             for img in soup.select("div.flick-ct * > img")
         ]
-        image_charts = {
-            img_type: chart
-            for img_type, chart in zip(image_chart_types, charts)
-        }
+        image_charts = dict(zip(image_chart_types, charts))
 
         graph_urls = NaverStockGraphURLs(
             image_charts.get("일봉", ""),
