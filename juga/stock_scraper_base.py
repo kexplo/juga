@@ -21,7 +21,8 @@ class NaverStockData(BaseModel):
     chart_urls: NaverStockChartURLs
     url: str
 
-    def __post_init__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         if self.compare_price[0] != "-":
             self.compare_price = "🔺" + self.compare_price
         if self.compare_ratio[0] != "-":
