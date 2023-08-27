@@ -6,29 +6,54 @@ from juga.naver_stock_api import NaverStockGlobalStockScraper, NaverStockKoreaSt
 from juga.stock_scraper_base import NaverStockData
 
 
-async def test_fetch_korea_stock(mock_aioresponse, read_testdata):
-    expected_basic = read_testdata("230826_m_api_basic_naver_result.json")
+@pytest.mark.parametrize(
+    ("basic_mockdata_filename", "int_mockdata_filename", "code", "metadata", "expected_json"),
+    [
+        # korea stock
+        (
+            "230826_m_api_basic_naver_result.json",
+            "230826_m_api_integration_naver_result.json",
+            "035420",
+            NaverStockMetadata(
+                symbol_code="035420",
+                display_name="NAVER",
+                stock_exchange_code="KOSPI",
+                stock_exchange_name="코스피",
+                url="https://m.stock.naver.com/domestic/stock/035420/total",
+                reuters_code="035420",
+                nation_code="KOR",
+                nation_name="대한민국",
+            ),
+            '{"name":"NAVER","name_eng":"NAVER","symbol_code":"035420","close_price":"211,000","market_value":"34조 6,144억","stock_exchange_name":"KOSPI","compare_price":"-18,000","compare_ratio":"-7.86","total_infos":{"전일":"229,000","시가":"221,500","고가":"222,000","저가":"210,500","거래량":"2,059,768","대금":"442,787백만","시총":"34조 6,144억","외인소진율":"47.00%","52주 최고":"246,500","52주 최저":"155,000","PER":"47.51배","EPS":"4,441원","추정PER":"35.14배","추정EPS":"6,004원","PBR":"1.41배","BPS":"149,954원","배당수익률":"0.43%","주당배당금":"914원"},"chart_urls":{"candleDay":"https://ssl.pstatic.net/imgfinance/chart/mobile/candle/day/035420_end.png?1692947458000","candleWeek":"https://ssl.pstatic.net/imgfinance/chart/mobile/candle/week/035420_end.png?1692947458000","candleMonth":"https://ssl.pstatic.net/imgfinance/chart/mobile/candle/month/035420_end.png?1692947458000","day":"https://ssl.pstatic.net/imgfinance/chart/mobile/day/035420_end.png?1692947458000","day_up":"https://ssl.pstatic.net/imgfinance/chart/mobile/mini/035420_end_up.png?1692947458000","day_up_tablet":"https://ssl.pstatic.net/imgfinance/chart/mobile/mini/035420_end_up_tablet.png?1692947458000","areaMonthThree":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/month3/035420_end.png?1692947458000","areaYear":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/year/035420_end.png?1692947458000","areaYearThree":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/year3/035420_end.png?1692947458000","areaYearTen":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/year10/035420_end.png?1692947458000","transparent":"https://ssl.pstatic.net/imgfinance/chart/mobile/mini/035420_transparent.png?1692947458000"},"url":"https://m.stock.naver.com/domestic/stock/035420/total"}',  # noqa: E501
+        ),
+        # korea etf
+        (
+            "230826_m_api_basic_kodex200_result.json",
+            "230826_m_api_integration_kodex200_result.json",
+            "069500",
+            NaverStockMetadata(
+                symbol_code="069500",
+                display_name="KODEX 200",
+                stock_exchange_code="KOSPI",
+                stock_exchange_name="코스피",
+                url="https://m.stock.naver.com/domestic/stock/069500/total",
+                reuters_code="069500",
+                nation_code="KOR",
+                nation_name="대한민국",
+            ),
+            '{"name":"KODEX 200","name_eng":"KODEX 200","symbol_code":"069500","close_price":"33,080","market_value":"","stock_exchange_name":"KOSPI","compare_price":"-365","compare_ratio":"-1.09","total_infos":{"전일":"33,445","시가":"32,980","고가":"33,210","저가":"32,960","거래량":"1,671,750","대금":"55,283백만","52주 최고":"35,210","원주가 기준":"28,020","52주 최저":"27,419","최근 1개월 수익률":"-4.38%","최근 3개월 수익률":"-1.47%","최근 6개월 수익률":"+4.69%","최근 1년 수익률":"+4.32%","NAV":"33,152.86","펀드보수":"0.150%","기초지수":"코스피 200","운용사":"삼성자산운용(주)"},"chart_urls":{"candleDay":"https://ssl.pstatic.net/imgfinance/chart/mobile/candle/day/069500_end.png?1692947457000","candleWeek":"https://ssl.pstatic.net/imgfinance/chart/mobile/candle/week/069500_end.png?1692947457000","candleMonth":"https://ssl.pstatic.net/imgfinance/chart/mobile/candle/month/069500_end.png?1692947457000","day":"https://ssl.pstatic.net/imgfinance/chart/mobile/day/069500_end.png?1692947457000","day_up":"https://ssl.pstatic.net/imgfinance/chart/mobile/mini/069500_end_up.png?1692947457000","day_up_tablet":"https://ssl.pstatic.net/imgfinance/chart/mobile/mini/069500_end_up_tablet.png?1692947457000","areaMonthThree":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/month3/069500_end.png?1692947457000","areaYear":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/year/069500_end.png?1692947457000","areaYearThree":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/year3/069500_end.png?1692947457000","areaYearTen":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/year10/069500_end.png?1692947457000","transparent":"https://ssl.pstatic.net/imgfinance/chart/mobile/mini/069500_transparent.png?1692947457000"},"url":"https://m.stock.naver.com/domestic/stock/069500/total"}',  # noqa: E501
+        ),
+    ],
+)
+async def test_fetch_korea_stock(basic_mockdata_filename, int_mockdata_filename, code, metadata, expected_json, mock_aioresponse, read_testdata):
+    expected_basic = read_testdata(basic_mockdata_filename)
+    mock_aioresponse.get(f"https://m.stock.naver.com/api/stock/{code}/basic", payload=expected_basic)
 
-    mock_aioresponse.get("https://m.stock.naver.com/api/stock/035420/basic", payload=expected_basic)
-
-    expected_integration = read_testdata("230826_m_api_integration_naver_result.json")
-
-    mock_aioresponse.get("https://m.stock.naver.com/api/stock/035420/integration", payload=expected_integration)
-
-    metadata = NaverStockMetadata(
-        symbol_code="035420",
-        display_name="NAVER",
-        stock_exchange_code="KOSPI",
-        stock_exchange_name="코스피",
-        url="https://m.stock.naver.com/domestic/stock/035420/total",
-        reuters_code="035420",
-        nation_code="KOR",
-        nation_name="대한민국",
-    )
+    expected_integration = read_testdata(int_mockdata_filename)
+    mock_aioresponse.get(f"https://m.stock.naver.com/api/stock/{code}/integration", payload=expected_integration)
 
     scraper = NaverStockKoreaStockScraper(metadata)
 
-    expected_json = '{"name":"NAVER","name_eng":"NAVER","symbol_code":"035420","close_price":"211,000","market_value":"34조 6,144억","stock_exchange_name":"KOSPI","compare_price":"-18,000","compare_ratio":"-7.86","total_infos":{"전일":"229,000","시가":"221,500","고가":"222,000","저가":"210,500","거래량":"2,059,768","대금":"442,787백만","시총":"34조 6,144억","외인소진율":"47.00%","52주 최고":"246,500","52주 최저":"155,000","PER":"47.51배","EPS":"4,441원","추정PER":"35.14배","추정EPS":"6,004원","PBR":"1.41배","BPS":"149,954원","배당수익률":"0.43%","주당배당금":"914원"},"chart_urls":{"candleDay":"https://ssl.pstatic.net/imgfinance/chart/mobile/candle/day/035420_end.png?1692947458000","candleWeek":"https://ssl.pstatic.net/imgfinance/chart/mobile/candle/week/035420_end.png?1692947458000","candleMonth":"https://ssl.pstatic.net/imgfinance/chart/mobile/candle/month/035420_end.png?1692947458000","day":"https://ssl.pstatic.net/imgfinance/chart/mobile/day/035420_end.png?1692947458000","day_up":"https://ssl.pstatic.net/imgfinance/chart/mobile/mini/035420_end_up.png?1692947458000","day_up_tablet":"https://ssl.pstatic.net/imgfinance/chart/mobile/mini/035420_end_up_tablet.png?1692947458000","areaMonthThree":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/month3/035420_end.png?1692947458000","areaYear":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/year/035420_end.png?1692947458000","areaYearThree":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/year3/035420_end.png?1692947458000","areaYearTen":"https://ssl.pstatic.net/imgfinance/chart/mobile/area/year10/035420_end.png?1692947458000","transparent":"https://ssl.pstatic.net/imgfinance/chart/mobile/mini/035420_transparent.png?1692947458000"},"url":"https://m.stock.naver.com/domestic/stock/035420/total"}'  # noqa: E501
     expected_result = NaverStockData.model_validate_json(expected_json)
 
     async with aiohttp.ClientSession() as session:
