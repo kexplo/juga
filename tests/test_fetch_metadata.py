@@ -42,6 +42,7 @@ MICROSOFT_METADATA = (
 )
 
 
+@pytest.mark.webtest()
 @pytest.mark.parametrize(
     ("query", "expected"),
     [
