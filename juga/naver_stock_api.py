@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Type, TypedDict, TypeVar
+from typing import Tuple, Type, TypeVar
 
 import aiohttp
 from asyncache import cached
@@ -12,19 +12,6 @@ from juga.stock_scraper_base import NaverStockData
 
 class InvalidStockQuery(Exception):
     pass
-
-
-class NaverStockAPIResponse(TypedDict):
-    stockName: str  # noqa: N815
-    stockNameEng: str  # noqa: N815
-    symbolCode: str  # noqa: N815
-    closePrice: str  # noqa: N815
-    stockExchangeType: Dict[str, str]  # noqa: N815
-    compareToPreviousClosePrice: str  # noqa: N815
-    stockItemTotalInfos: List[Dict[str, str]]  # noqa: N815
-    fluctuationsRatio: str  # noqa: N815
-    imageChartTypes: List[str]  # noqa: N815
-    imageCharts: Dict[str, str]  # noqa: N815
 
 
 class NaverStockScraperFactory:
