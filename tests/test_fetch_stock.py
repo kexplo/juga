@@ -1,28 +1,11 @@
-import json
-from pathlib import Path
-
 import aiohttp
-from aioresponses import aioresponses
-import pytest
 
 from juga.metadata_scraper import NaverStockMetadata
 from juga.naver_stock_api import NaverStockKoreaStockScraper
 from juga.stock_scraper_base import NaverStockData
 
 
-@pytest.fixture()
-def mock_aioresponse():
-    with aioresponses() as m:
-        yield m
-
-
-def read_testdata(filename: str) -> dict:
-    data_path = Path(__file__).resolve().parent / filename
-    with open(data_path, "r") as f:
-        return json.loads(f.read())
-
-
-async def test_fetch_stock(mock_aioresponse):
+async def test_fetch_stock(mock_aioresponse, read_testdata):
     expected_basic = read_testdata("230826_m_api_basic_naver_result.json")
 
     mock_aioresponse.get("https://m.stock.naver.com/api/stock/035420/basic", payload=expected_basic)
