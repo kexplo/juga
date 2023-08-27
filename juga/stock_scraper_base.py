@@ -5,30 +5,7 @@ import aiohttp
 from pydantic import BaseModel, ConfigDict, Field
 
 from juga.metadata_scraper import NaverStockMetadata
-
-
-def to_lower_camel(string: str) -> str:
-    camel = "".join(word.capitalize() for word in string.split("_"))
-    return camel[:1].lower() + camel[1:]
-
-
-model_config = ConfigDict(alias_generator=to_lower_camel)
-
-
-class NaverStockChartURLs(BaseModel):
-    model_config = model_config
-
-    candle_day: str  # 일봉
-    candle_week: str  # 주봉
-    candle_month: str  # 월봉
-    day: str  # 1일
-    day_up: str = Field(alias='day_up')
-    day_up_tablet: str = Field(alias='day_up_tablet')
-    area_month_three: str  # 3개월
-    area_year: str  # 1년
-    area_year_three: str  # 3년
-    area_year_ten: str  # 10년
-    transparent: str
+from juga.naver_stock_models import NaverStockChartURLs
 
 
 class NaverStockData(BaseModel):
@@ -57,14 +34,10 @@ class NaverStockScraperBase(metaclass=ABCMeta):
         self.metadata = stock_metadata
 
     @abstractmethod
-    async def _fetch_stock_data_impl(
-        self, session: aiohttp.ClientSession
-    ) -> NaverStockData:
+    async def _fetch_stock_data_impl(self, session: aiohttp.ClientSession) -> NaverStockData:
         pass
 
-    async def fetch_stock_data(
-        self, session: aiohttp.ClientSession
-    ) -> NaverStockData:
+    async def fetch_stock_data(self, session: aiohttp.ClientSession) -> NaverStockData:
         stock_data = await self._fetch_stock_data_impl(session)
         stock_data.url = self.metadata.url
         # workaround for broken korea stock market link

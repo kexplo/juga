@@ -3,28 +3,10 @@ from typing import Union
 import aiohttp
 from pydantic import BaseModel
 
-from juga.stock_scraper_base import (model_config, NaverStockChartURLs,
-                                     NaverStockData, NaverStockScraperBase)
-
-
-class NaverKoreaStockCodeType(BaseModel):
-    code: str  # "5",
-    text: str  # "하락",
-    name: str  # "FALLING"
-
-
-class NaverKoreaStockCompare(NaverKoreaStockCodeType):
-    # code: "5",
-    # text: "하락",
-    # name: "FALLING"
-    pass
-
-
-class NaverKoreaStockTradeStopType(NaverKoreaStockCodeType):
-    # code: "1",
-    # text: "운영.Trading",
-    # name: "TRADING"
-    pass
+from juga.naver_stock_models import (model_config, NaverStockChartURLs,
+                                     NaverStockCompareToPrevious,
+                                     NaverStockTradeStopType)
+from juga.stock_scraper_base import NaverStockData, NaverStockScraperBase
 
 
 class NaverKoreaStockExchangeType(BaseModel):
@@ -54,11 +36,11 @@ class NaverKoreaStockResponse(BaseModel):
     sosok: str  # "0",
     close_price: str  # "211,000",
     compare_to_previous_close_price: str  # "-18,000",
-    compare_to_previous_price: NaverKoreaStockCompare
+    compare_to_previous_price: NaverStockCompareToPrevious
     fluctuations_ratio: str  # "-7.86",
     market_status: str  # "CLOSE",
     local_traded_at: str  # "2023-08-25T16:10:58+09:00",
-    trade_stop_type: NaverKoreaStockTradeStopType
+    trade_stop_type: NaverStockTradeStopType
     stock_exchange_type: NaverKoreaStockExchangeType
     stock_exchange_name: str  # "KOSPI",
 
@@ -97,9 +79,9 @@ class NaverStockKoreaStockScraper(NaverStockScraperBase):
         total_infos = {}
         market_value = ""
         for info in info_resp_json["totalInfos"]:
-            total_infos[info["key"]] = info["value"]
+            total_infos[info["key"].strip()] = info["value"].strip()
             if info["code"] == "marketValue":
-                market_value = info["value"]
+                market_value = info["value"].strip()
 
         return NaverStockData(
             name=stock_resp.stock_name,
