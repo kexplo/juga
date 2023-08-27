@@ -46,13 +46,14 @@ class GlobalStockResponse(BaseModel):
 
     stock_end_type: str  # "stock",
     reuters_code: str  # "MSFT.O",
+    fund_name: Optional[str] = None  # Invesco QQQ Trust Seires 1
     stock_name: str  # "마이크로소프트",
     stock_name_eng: str  # "Microsoft Corp",
     symbol_code: str  # "MSFT",
     trade_stop_type: NaverStockTradeStopType
     stock_exchange_type: NaverStockExchangeType
     stock_exchange_name: str  # "NASDAQ",
-    industry_code_type: NaverStockIndustryCodeType
+    industry_code_type: Optional[NaverStockIndustryCodeType] = None
     delay_time: int  # 0,
     delay_time_name: str  # "실시간",
     compare_to_previous_price: NaverStockCompareToPrevious
@@ -74,22 +75,25 @@ class GlobalStockResponse(BaseModel):
     # areaYearTen"
     script_chart_types: list[str]
     currency_type: NaverStockCurrencyType
-    count_of_listed_stock: int  # 7429763722,
+    count_of_listed_stock: Optional[int] = None  # 7429763722,
     index_or_etf_tool_tip: Optional[str]  # null,
     stock_end_url: str  # "https://m.stock.naver.com/worldstock/stock/MSFT.O",
-    chart_iq_end_url: str  # "https://m.stock.naver.com/fchart/foreign/stock/MSFT.O",
+    chart_iq_end_url: Optional[str] = None  # "https://m.stock.naver.com/fchart/foreign/stock/MSFT.O",
     stock_item_total_infos: list[dict[str, Union[str, dict]]]
-    etf_thema_infos: Optional[str]  # null,
+    etf_thema_infos: Optional[str] = None  # null,
     is_etf: bool  # false,
     is_etf_america: bool  # false,
-    is_finance_summary: bool  # true,
-    has_news: bool  # true,
-    researchs: list  # [],
+    large_code_name: Optional[str] = None  # "국가",
+    middle_code_name: Optional[str] = None  # "선진",
+    is_finance_summary: Optional[bool] = None  # true,
+    has_news: Optional[bool] = None  # true,
+    researchs: Optional[list] = None  # [],
     nation_type: str  # "USA",
     nation_name: str  # "미국",
-    newly_listed: bool  # false,
+    newly_listed: Optional[bool] = None  # false,
     market_operating_time_info: NaverStockMarketOperatingTimeInfo
     exchange_operating_time: bool  # false
+    exchange_current_time: Optional[str] = None  # "2023-08-26T13:08:44.607992-04:00",
 
 
 class NaverStockGlobalStockScraper(NaverStockScraperBase):
