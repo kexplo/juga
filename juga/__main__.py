@@ -3,7 +3,7 @@ from functools import wraps
 
 import typer
 
-from juga.naver_stock_api import NaverStockAPI
+from juga.naver_stock_api import NaverStockAPI, InvalidStockQuery
 
 
 app = typer.Typer()
@@ -21,7 +21,11 @@ def coro(f):
 @app.command()
 @coro
 async def stock(ticker: str):
-    api = await NaverStockAPI.from_query(ticker)
+    try:
+        api = await NaverStockAPI.from_query(ticker)
+    except InvalidStockQuery:
+        typer.echo(f"failed to find stock. query: {ticker}")
+        raise typer.Exit(code=1)
     typer.echo(f"stock: {ticker}")
     typer.echo(await api.fetch_stock_data())
 

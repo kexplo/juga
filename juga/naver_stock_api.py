@@ -42,8 +42,11 @@ T = TypeVar("T", bound="NaverStockAPI")
 class NaverStockAPI:
     @classmethod
     async def from_query(cls: Type[T], query: str) -> T:
-        metadata = (await cls.fetch_metadata(query))[0]
-        return cls(metadata)
+        metadata = (await cls.fetch_metadata(query))
+        if not metadata:
+            raise InvalidStockQuery(f"failed to find stock. query: {query}")
+        # pick first one
+        return cls(metadata[0])
 
     @classmethod
     @cached(LRUCache(maxsize=20))
