@@ -1,5 +1,3 @@
-from typing import Union
-
 import aiohttp
 from pydantic import BaseModel
 

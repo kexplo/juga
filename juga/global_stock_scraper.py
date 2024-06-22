@@ -3,7 +3,13 @@ from typing import Optional, Union
 import aiohttp
 from pydantic import BaseModel
 
-from juga.naver_stock_models import model_config, NaverStockCompareToPrevious, NaverStockCurrencyType, NaverStockTradeStopType, NaverStockExchangeType
+from juga.naver_stock_models import (
+    model_config,
+    NaverStockCompareToPrevious,
+    NaverStockCurrencyType,
+    NaverStockTradeStopType,
+    NaverStockExchangeType,
+)
 from juga.stock_scraper_base import NaverStockChartURLs, NaverStockData, NaverStockScraperBase
 
 

@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Optional
 
 import aiohttp
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel
 
 from juga.metadata_scraper import NaverStockMetadata
 from juga.naver_stock_models import NaverStockChartURLs
