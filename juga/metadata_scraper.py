@@ -60,7 +60,7 @@ class NaverStockAutoCompleteResponse(BaseModel):
 
 
 class NaverStockMetadataScraper:
-    URL_TEMPLATE = "https://m.stock.naver.com/front-api/v1/search/autoComplete?query={query}&target=stock%2Cindex%2Cmarketindicator%2Ccoin"  # noqa: E501
+    URL_TEMPLATE = "https://m.stock.naver.com/front-api/search/autoComplete?query={query}&target=stock%2Cindex%2Cmarketindicator%2Ccoin"  # noqa: E501
 
     @classmethod
     async def fetch_metadata(cls, session: aiohttp.ClientSession, query: str) -> tuple[NaverStockMetadata, ...]:
